@@ -21,7 +21,7 @@ export class UploadedFilesPipe implements PipeTransform {
     const parsedData = datas.map(data => {
       const parsed = JSON.parse(data.buffer.toString());
       // Ensure selectedCategories is processed correctly
-      parsed.selectedCategories = parsed.selectedCategories.map(category => category.trim());
+      // parsed.selectedCategories = parsed.selectedCategories.map(category => category.trim());
       return parsed;
     });
 

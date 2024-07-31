@@ -114,3 +114,21 @@ export const deleteFileNaver = async (filename: string) => {
     throw new InternalServerErrorException(err, 'Fail to Delete Naver Object Storage file');
   }
 };
+
+export async function uploadImage(file: Express.Multer.File, folder: string = 'album-covers'): Promise<string> {
+  const s3 = new AWS.S3({
+    endpoint: 'https://kr.object.ncloudstorage.com',
+    region: 'kr-standard',
+    accessKeyId: process.env.NAVER_ACCESS_KEY_ID,
+    secretAccessKey: process.env.NAVER_SECRET_ACCESS_KEY,
+  });
+
+  const uploadResult = await s3.upload({
+    Bucket: 'arts',
+    Key: `${folder}/${Date.now()}-${file.originalname}`,
+    Body: file.buffer,
+    ACL: 'public-read',
+  }).promise();
+
+  return uploadResult.Location; // 업로드된 파일의 URL 반환
+}

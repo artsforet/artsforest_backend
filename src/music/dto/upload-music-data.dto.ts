@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsJSON,
   IsNotEmpty,
   IsNumber,
   IsNumberString,
@@ -31,10 +32,15 @@ export class UploadMusicDataDto {
   @IsArray()
   category?: string[];
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({
+    description: 'JSON string representing a list of tags',
+    example: '["tag1", "tag2"]'
+  })
   @IsOptional()
-  @IsString({ each: true })
+  @IsString()
+  @IsJSON()
   tags?: string[];
+
 
   @ApiProperty()
   @IsOptional()
@@ -57,10 +63,10 @@ export class UploadMusicDataDto {
   @IsString()
   albumartist?: string;
 
-  @ApiProperty()
-  @IsOptional()
-  @IsString()
-  atomsphare?: string;
+  // @ApiProperty()
+  // @IsOptional()
+  // @IsString()
+  // atomsphare?: string;
   // @ApiProperty()
   // @IsOptional()
   // @IsArray()

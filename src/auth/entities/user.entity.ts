@@ -1,3 +1,4 @@
+import { Download } from 'src/music/entities/download.entity';
 import { Likes } from 'src/music/entities/likes.entity';
 import { Music } from 'src/music/entities/music.entity';
 import { Playlist } from 'src/playlist/entities/playlist.entity';
@@ -19,6 +20,9 @@ export class User {
 
   @Column()
   name: string;
+  
+  @Column({ nullable: true})
+  authority: string;
 
   @Column()
   birthdate: string;
@@ -26,7 +30,7 @@ export class User {
   @Column({ nullable: true, select: false })
   hashedRefreshToken: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, select: false })
   accessToken: string;
 
   @Column({ nullable: true })
@@ -43,4 +47,7 @@ export class User {
   
   @OneToMany(() => Likes, (likes) => likes.user)
   likes: Likes[];
+
+  @OneToMany(() => Download, download => download.user)
+  downloads: Download[];
 }

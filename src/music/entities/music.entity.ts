@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, ManyToOne, JoinTabl
 import { Playlist } from '../../playlist/entities/playlist.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { Likes } from './likes.entity';
+import { Download } from './download.entity';
+import { Curation } from './curation.entity';
 
 export const musicGenres = [
   'Hip-hop & Rap',
@@ -30,6 +32,28 @@ export const musicGenres = [
   'Disco',
   'World',
 ];
+
+
+export const series = [
+  '브이로그',
+  '귀여운 음악', 
+  '코믹',
+  '기쁨과 환희', 
+  '잔잔한 음악',
+  '행사 음악',
+  '광고 음악',
+  '할리우드',
+  '세계 음악', 
+  '인트로 음악',
+  '시사',
+  '공포 미스터리',
+  '배경음악의 정석', 
+  '힙합 R&B',
+  '배경음악 팩토리',
+  '테마',
+  '자장가',
+  '계절'
+]
 
 @Entity()
 export class Music {
@@ -61,6 +85,7 @@ export class Music {
 
   @Column({ nullable: true })
   cover: string;
+
 
   @Column({ nullable: true })
   coverFilename: string;
@@ -95,7 +120,14 @@ export class Music {
   instrument: string;
 
   @Column({ nullable: true })
+  series: string;
+
+  @Column({ nullable: true })
   years: number;
+
+  @Column({ default: true })
+  isPublic: boolean;
+
 
   @Column()
   userId: number;
@@ -108,5 +140,16 @@ export class Music {
 
   @OneToMany(() => Likes, like => like.music)
   likes: Likes[];
+  
+  @Column({default: 0})
+  playCount: number;
+  
+  @OneToMany(() => Download, download => download.music)
+  downloads: Download[];
 
+  @Column({ default: 0 })
+  downloadCount: number;  // 다운로드 수 필드 추가
+
+  // @ManyToMany(() => Curation, curation => curation.music)
+  // curation: Curation[];
 }

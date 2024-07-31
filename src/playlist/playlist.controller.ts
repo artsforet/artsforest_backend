@@ -5,7 +5,7 @@ import { Playlist } from './entities/playlist.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { GetOrUser } from 'src/decorators/get-or-user-decorator';
+import { GetOrUser } from 'src/decorators/get-or-user.decorator';
 import { Music } from 'src/music/entities/music.entity';
 
 @Controller('playlist')

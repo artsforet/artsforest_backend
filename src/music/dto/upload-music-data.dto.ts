@@ -83,6 +83,11 @@ export class UploadMusicDataDto {
   @IsString()
   year?: number;
 
+  @ApiProperty()
+  @IsOptional()
+  isPublic?: boolean;
+
+
   // @ApiProperty()
   // @IsOptional()
   // @IsArray()

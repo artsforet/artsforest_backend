@@ -8,6 +8,7 @@ import { Music } from "./entities/music.entity";
 import { Likes } from "./entities/likes.entity";
 import { Download } from "./entities/download.entity";
 import { Curation } from "./entities/curation.entity";
+import { Pd } from "./entities/pd.entity";
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import { Curation } from "./entities/curation.entity";
             Playlist,
             Likes,
             Download,
-            Curation
+            Curation,
+            Pd
         ]),
     ],
     controllers: [MusicController],

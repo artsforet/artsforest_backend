@@ -4,6 +4,7 @@ import { User } from 'src/auth/entities/user.entity';
 import { Likes } from './likes.entity';
 import { Download } from './download.entity';
 import { Curation } from './curation.entity';
+import { Pd } from './pd.entity';
 
 export const musicGenres = [
   'Hip-hop & Rap',
@@ -149,6 +150,9 @@ export class Music {
 
   @Column({ default: 0 })
   downloadCount: number;  // 다운로드 수 필드 추가
+
+  @ManyToOne(() => Pd, pd => pd.songs)
+  pd: Pd;
 
   // @ManyToMany(() => Curation, curation => curation.music)
   // curation: Curation[];

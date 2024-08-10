@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Req, Request, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, Req, Request, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { MusicService } from './music.service'; // Import the MusicService class
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
@@ -7,6 +7,7 @@ import { UploadMusicDto } from './dto/upload-music.dto';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { User } from 'src/auth/entities/user.entity';
 import { request } from 'express';
+import { Response } from 'express';
 import { GetOrUser } from 'src/decorators/get-or-user.decorator';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/jwt-auth-guart-optional';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,6 +18,7 @@ import { Curation } from './entities/curation.entity';
 import { extname } from 'path';
 import { diskStorage } from 'multer';
 import { uploadImage } from 'src/fileFunction';
+import { Pd } from './entities/pd.entity';
 
 
 @Controller('/music')
@@ -101,7 +103,7 @@ export class MusicController {
     findAll() { 
       return this.musicService.findAll();
     }
-
+c
     // @UseGuards(AuthGuard('jwt'))
     @Get('/soundfactory/song')
     async find(
@@ -173,6 +175,32 @@ export class MusicController {
     findOne(@Param('id') id: number) {
       return this.musicService.musicFindOne(id);
     }
+
+
+
+// Series
+// @Get('/album/series')
+// async findVlog(
+//   @GetOrUser() user: User,
+//   @Query('series') series?: string
+// ) {
+//   const userId = user ? user.id : null;
+//   const seriesList = series ? series.split(',') : [];
+//   const results = await Promise.all(
+//     seriesList.map(s => this.musicService.findSeriesVlog(userId))
+//   );
+//   return results.flat();
+// }
+
+@Get('/series/vlog')
+async findVlog(){
+  return this.musicService.findSeriesVlog()
+}
+
+@Get('/series/:category')
+async getAlbumsByCategory(@Param('category') category: string) {
+  return this.musicService.getAlbumsByCategory(category);
+}
 
 
 // LIKE 
@@ -298,6 +326,9 @@ async unlikeSong(@Param('musicId') musicId: number, @Req() req: any): Promise<vo
     }
 
 
+
+
+
     @Post('/curation/create')
     @UseInterceptors(FileInterceptor('cover'))
     async create(
@@ -325,6 +356,63 @@ async unlikeSong(@Param('musicId') musicId: number, @Req() req: any): Promise<vo
         throw new Error('Failed to create curation: ' + error.message);
       }
     }
+
+
+    @Delete('/curation/delete/:name')
+    async deleteCuration(@Param('name') name: string): Promise<void> {
+      return this.musicService.deleteCuration(name);
+    }
+    // @Post('/pdSelect/:id/songs')
+    // async addSongsToPlaylist(@Param('id') id: number, @Body('songIds') songIds: number[]) {
+    //   return this.musicService.addSongsToPlaylist(id, songIds);
+    // }
+
+    // @Get('/pdSelect/all')
+    // async getAllSongs(): Promise<any> {
+    //   return await this.musicService.findPd();
+    //   // const result = await this.musicService.findAllSongs();
+
+    //     // if (!result.success) {
+    //     //     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    //     //         success: false,
+    //     //         message: result.message,
+    //     //     });
+    //     // }
+
+    //     // return res.status(HttpStatus.OK).json({
+    //     //     success: true,
+    //     //     data: result.data,
+    //     // });
+    // }
+
+    @Get('/pdSelect/all')
+    async getPdSongs(
+      @GetOrUser() user: User
+    ): Promise<any[]> {
+      const userId = user ? user.id : null;
+      return this.musicService.getPdSongs(userId);
+    }
+ 
+      @Post('/pdSelect/create')
+      async createPd(@Body() body: { songIds: number[] }): Promise<Pd> {
+        const { songIds } = body;
+        return this.musicService.createPd(songIds);
+      }
+      
+ 
+      @Get('/pdSelect/available')
+      async getAvailableSongs(
+        @GetOrUser() user: User
+      ): Promise<Music[]> {
+        const userId = user ? user.id : null;
+        return this.musicService.getAvailableSongs(userId);
+      }
+    
+      @Delete('/pdSelect/delete/:id')
+      async deletePd(@Param('id') id: number): Promise<void> {
+        return this.musicService.deletePd(id);
+      }
+    
     }
     // @UseGuards(JwtAuthGuard)
     // @Post(':musicId/like')

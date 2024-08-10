@@ -6,7 +6,7 @@ import { UploadMusicDataDto } from './dto/upload-music-data.dto';
 import { deleteFileDisk, uploadFileDisk, uploadFileNaver, uploadImage } from 'src/fileFunction';
 import { resolve } from 'path';
 import { MusicDataDto } from './dto/music-data.dto';
-import { In, Like, Repository } from 'typeorm';
+import { DataSource, In, Like, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as shell from 'shelljs';
 import { readFileSync } from 'fs';
@@ -15,6 +15,7 @@ import { Likes } from './entities/likes.entity';
 import { Download } from './entities/download.entity';
 import { Curation } from './entities/curation.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Pd } from './entities/pd.entity';
 
 @Injectable()
 export class MusicService {
@@ -27,8 +28,11 @@ export class MusicService {
         private readonly likeRepository: Repository<Likes>,
         @InjectRepository(Curation)
         private readonly curationRepository: Repository<Curation>,
+        @InjectRepository(Pd)
+        private readonly pdRepository: Repository<Pd>,
         @InjectRepository(Download)
         private readonly downloadRepository: Repository<Download>,
+        private datasource: DataSource
     ) {}
 
     async getAllMusic() {
@@ -50,11 +54,18 @@ export class MusicService {
             relations: ['likes', 'likes.user'],
         });
 
+        
         return musicList.map(music => {
-            const isLiked = userId ? music.likes.some(like => {
-              console.log("Checking like: ", like, " for userId: ", userId);
-              return like.user.id === userId;
-            }) : false;
+            let isLiked = false;
+            // console.log(music.likes[0])
+            if(music.likes[0]){
+               isLiked = true;
+            } else{
+              isLiked = false;
+            }
+            // const isLiked = userId ? music.likes.some(like => {
+            //   return like[0].user.id === userId;
+            // }) : false;
           
             return {
               ...music,
@@ -479,10 +490,12 @@ export class MusicService {
     async findCuration(): Promise<Curation[]> {
         return this.curationRepository.find({ relations: ['songs'] });
     }
+
     async findOne(id: number): Promise<Curation> {
         return this.curationRepository.findOne({ where: { id }, relations: ['songs'] });
     }
 
+    
     async createCuration(name: string, songIds: number[], cover: string): Promise<Curation> {
         const songs = await this.musicRepository.findBy({
           id: In(songIds),
@@ -500,4 +513,241 @@ export class MusicService {
     
         return await this.curationRepository.save(newCuration);
       }
+    // 큐레이션 삭제 메서드 추가
+    async deleteCuration(name: string): Promise<void> {
+        const result = await this.curationRepository.delete({ name });
+        if (result.affected === 0) {
+          throw new NotFoundException('Curation not found with the provided name');
+        }
+      }
+
+      // PD의 선택
+      async createPd(songIds: number[]): Promise<Pd> {
+        // if (!Array.isArray(songIds)) {
+        //   throw new Error('songIds must be an array');
+        // }
+    
+        const songs = await this.musicRepository.findBy({
+          id: In(songIds),
+        });
+    
+        const newCuration = this.pdRepository.create({
+          songs,
+        });
+    
+        return await this.pdRepository.save(newCuration);
+      }
+
+      async findOnePd(songId: any){
+        return this.pdRepository.findOne({where: {id: songId}});
+    }
+ 
+
+    async getPdSongs(userId: number): Promise<Music[]> {
+        const pds = await this.pdRepository.find({
+          order: { id: 'DESC' },
+          relations: ['songs', 'songs.likes', 'songs.likes.user'],
+          take: 1,  // Get only the most recent Pd entity
+        });
+
+        const songs = pds[0].songs;
+
+        if(!Array.isArray(songs)){
+            return [];
+        }
+        console.log(songs);
+        // return songs;
+
+        return songs.map(music => {
+            let isLiked = false;
+            // console.log(music.likes[0])
+            if(music.likes[0]){
+               isLiked = true;
+            } else{
+              isLiked = false;
+            }
+            return {
+              ...music,
+              isLiked,
+            };
+        });
+      }
+
+   
+  async getAvailableSongs(userId: number): Promise<Music[]> {
+    const pdSongs = await this.getPdSongs(userId);
+    const pdSongIds = pdSongs.map(song => song.id);
+    const availableSongs = await this.musicRepository.find();
+
+    return availableSongs.map(song => ({
+      ...song,
+      isSelected: pdSongIds.includes(song.id),
+    }));
+  }
+
+  async deletePd(songId: number): Promise<void> {
+    const pd = await this.pdRepository.find({
+        order: { id: 'DESC' },
+        relations: ['songs'],
+        take: 1,
+      });
+
+    if (pd) {
+      await this.datasource
+        .createQueryBuilder()
+        .relation(Pd, 'songs')
+        .of(pd)
+        .remove(songId);
+    }
+  }
+      // 시리즈 분류
+
+
+      async getAlbumsByCategory(series: string): Promise<Music[]> {
+        return this.musicRepository.find({ where: { series } });
+      }
+
+      async findSeriesVlog(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '브이로그' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    
+    async findSeriesCute(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '귀여운 음악' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesComic(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '코믹' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+
+    async findSeriesHappy(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '기쁨과 환희' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+
+    async findSeriesbrilliance(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '찬란한 음악' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    
+    async findSeriesWindless(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '잔잔한 음악' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesEvent(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '행사 음악' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+
+    async findSeriesHollywood(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '할리우드' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesWorldMusic(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '세계 음악' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesIntromusic(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '인트로 음악' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+    async findSeriesfear(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '공포 미스터리' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesBgm(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '배경음악의 정석' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesHiphopRnb(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '힙합 R&B' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+    
+    async findSeriesBgmFactory(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '배경음악 팩토리' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+
+    async findSeriesTheme(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '테마' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+
+
+    async findSeriesSeleeping(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '자장가' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
+
+    async findSeriesWeather(userId?: number): Promise<any[]> {
+        const musicList = await this.musicRepository.find({ where: { series: '계절' } });
+        return musicList.map(music => ({
+            ...music,
+            isLiked: userId ? music.likes.some(like => like.user.id === userId) : false,
+        }));
+    }
 }
+

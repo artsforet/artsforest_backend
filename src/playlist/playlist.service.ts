@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, UseGuards } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, UseGuards, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Playlist } from './entities/playlist.entity';
@@ -52,8 +52,39 @@ export class PlaylistService {
       relations: ['music'],
     });
   }
-  
-  async deleteUserPlaylists(user: User) {
-    return this.playlistRepository.delete({ user });
+
+  // 사용자의 플레이리스트 찾기
+  async findPlaylistByUserId(userId: number): Promise<Playlist[]> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['playlists'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    return user.playlists;
+  }
+
+  // 특정 플레이리스트에서 노래를 제거하는 메서드
+  async deleteSongFromPlaylist(userId: number, songId: number): Promise<void> {
+    const playlist = await this.playlistRepository.findOne({
+      where: { user: { id: userId }, music: { id: songId } }, // 사용자 ID와 노래 ID로 검색
+    });
+
+    if (!playlist) {
+      throw new NotFoundException('플레이리스트에서 노래를 찾을 수 없습니다.');
+    }
+
+    await this.playlistRepository.remove(playlist); // 해당 노래를 플레이리스트에서 제거
+  }
+
+  async getPlaylistsWithSong(songTitle: string): Promise<Playlist[]> {
+    return await this.playlistRepository
+      .createQueryBuilder('playlist')
+      .leftJoinAndSelect('playlist.songs', 'music') // 명시적으로 조인 수행
+      .where('music.title = :songTitle', { songTitle })
+      .getMany();
   }
 }

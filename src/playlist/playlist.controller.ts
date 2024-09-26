@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req, Param, UseGuards, ParseIntPipe, Put, Delete, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Param, UseGuards, ParseIntPipe, Put, Delete, Request, BadRequestException, HttpStatus, HttpException, NotFoundException } from '@nestjs/common';
 import { PlaylistService } from './playlist.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Playlist } from './entities/playlist.entity';
@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { GetOrUser } from 'src/decorators/get-or-user.decorator';
 import { Music } from 'src/music/entities/music.entity';
+import { MusicService } from 'src/music/music.service';
 
 @Controller('playlist')
 export class PlaylistController {
@@ -17,7 +18,8 @@ export class PlaylistController {
     private readonly userRepository : Repository<User>,
     @InjectRepository(Music)
     private readonly musicRepository : Repository<Music>,
-    private readonly playlistService: PlaylistService
+    private readonly playlistService: PlaylistService,
+    private readonly musicService: MusicService
   ) {}
   
   @Get(':userId/playlists')
@@ -48,33 +50,15 @@ export class PlaylistController {
     return this.playlistService.getUserPlaylist(user);
   }
 
+ 
   @UseGuards(JwtAuthGuard)
-  @Delete('/userplayer')
-  async deleteUserPlaylists(@Request() req) {
-    const user = await this.userRepository.findOne({ where: { username: req.user.username } });
-    return this.playlistService.deleteUserPlaylists(user);
+  @Delete('songs/:songId')
+  async deleteSongFromUserPlaylist(
+    @Request() req, // 요청 객체에서 사용자 정보를 추출
+    @Param('songId') songId: number, // 삭제할 노래의 ID
+  ): Promise<void> {
+    const userId = req.user.id; // 인증된 사용자 ID 추출
+  
+    await this.playlistService.deleteSongFromPlaylist(userId, songId); // 노래 삭제
   }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Post('/')
-  // async createPlaylist(@GetOrUser() user: User, @Body('name') name: string) {
-  //   return this.playlistService.createPlaylist(user, name);
-  // }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Get('/')
-  // async getUserPlaylists(@GetOrUser() user: User) {
-  //   return this.playlistService.getUserPlaylists(user)
-  // }
-
-
-  // @Post(':playlistId/musics/:musicId')
-  // async addMusicToPlaylist(
-  //   @Param('userId', ParseIntPipe) userId: number,
-  //   @Param('playlistId', ParseIntPipe) playlistId: number,
-  //   @Param('musicId', ParseIntPipe) musicId: number,
-  // ) {
-  //   await this.playlistService.addMusicToUserPlaylist(userId, playlistId, musicId);
-  //   return { message: 'Music added to playlist successfully' };
-  // }
 }

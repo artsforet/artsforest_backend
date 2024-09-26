@@ -20,13 +20,13 @@ export class User {
 
   @Column()
   name: string;
-  
-  @Column({ nullable: true})
+
+  @Column({ nullable: true })
   authority: string;
 
   @Column()
   birthdate: string;
-  
+
   @Column({ nullable: true, select: false })
   hashedRefreshToken: string;
 
@@ -36,18 +36,21 @@ export class User {
   @Column({ nullable: true })
   refreshToken: string;
 
-  @OneToMany(() => Music, music => music.user)
+  @OneToMany(() => Music, (music) => music.user)
   musics: Music[];
-  
-  @Column({ nullable: true })
-  defaultPlaylistId: number;
 
-  @OneToMany(() => Playlist, playlist => playlist.user)
+  @Column({ type: 'int', nullable: true, default: null })
+  defaultPlaylistId?: number;
+
+  @OneToMany(() => Playlist, (playlist) => playlist.user)
   playlists: Playlist[];
-  
+
   @OneToMany(() => Likes, (likes) => likes.user)
   likes: Likes[];
 
-  @OneToMany(() => Download, download => download.user)
+  @OneToMany(() => Download, (download) => download.user)
   downloads: Download[];
+
+  @Column({ default: false })
+  hasSubscription: boolean;  // 이용권 소유 여부를 나타내는 컬럼
 }

@@ -1,4 +1,9 @@
-import { IsString, IsNotEmpty, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsNumber,
+} from 'class-validator';
 
 export class AuthRegisterDto {
   @IsString()
@@ -17,7 +22,7 @@ export class AuthRegisterDto {
   @IsNotEmpty()
   name: string;
 
-  @IsDateString()
+  @IsString()
   @IsNotEmpty()
   birthdate: string;
 }

@@ -15,6 +15,9 @@ export class Playlist {
   @JoinColumn({ name: 'music_id' })
   music: Music;
 
+  // @ManyToOne(() => Music, (music) => music.playlists)
+  // music: Music; // 여기에서 music_id가 아니라 music으로 정의됨
+
   @Column()
   createdAt: Date;
 }

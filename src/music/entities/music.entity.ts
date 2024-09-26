@@ -129,6 +129,8 @@ export class Music {
   @Column({ default: true })
   isPublic: boolean;
 
+  // @Column()
+  // price: number;
 
   @Column()
   userId: number;
@@ -153,6 +155,10 @@ export class Music {
 
   @ManyToOne(() => Pd, pd => pd.songs)
   pd: Pd;
+
+
+  // @OneToMany(() => Access, access => access.music)
+  // accesses: Access[];
 
   // @ManyToMany(() => Curation, curation => curation.music)
   // curation: Curation[];

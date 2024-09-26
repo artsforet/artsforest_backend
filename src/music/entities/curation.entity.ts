@@ -56,7 +56,7 @@ export const series = [
 ]
 
 @Entity()
-export class Curation {
+export class Curation{
   @PrimaryGeneratedColumn()
   id: number;
 

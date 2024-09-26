@@ -9,6 +9,9 @@ import { Likes } from "./entities/likes.entity";
 import { Download } from "./entities/download.entity";
 import { Curation } from "./entities/curation.entity";
 import { Pd } from "./entities/pd.entity";
+import { AuthService } from "src/auth/auth.service";
+import { JwtService } from "@nestjs/jwt";
+import { LastSong } from "./entities/lastsong.entity";
 
 @Module({
     imports: [
@@ -19,11 +22,12 @@ import { Pd } from "./entities/pd.entity";
             Likes,
             Download,
             Curation,
-            Pd
+            Pd,
+            LastSong,
         ]),
     ],
     controllers: [MusicController],
-    providers: [MusicService],
+    providers: [MusicService, AuthService, JwtService],
 })
 export class MusicModule {}
 

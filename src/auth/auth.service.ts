@@ -44,6 +44,9 @@ export class AuthService {
   }
 
 
+  findOne(options: object): Promise<User | undefined> {
+    return this.userRepository.findOne(options);
+  }
   
   async login(user: any) {
     const find_user = this.findById(user.userId);
@@ -63,6 +66,7 @@ export class AuthService {
   async getUserWithDefaultPlaylist(userId: number): Promise<User> {
     return this.userRepository.findOne({ where: { id: userId }, relations: ['playlists'] });
   }
+
 
   // async createPlaylist(userId: number, name: string): Promise<Playlist> {
   //   const user = await this.userRepository.findOne({where: {id:userId}});
@@ -156,6 +160,13 @@ export class AuthService {
     await this._updateRefreshToken(user, hashedRefreshToken);
   }
 
+  async removeRefreshToken(userId: number): Promise<void> {
+    await this.userRepository.update(userId, {
+      hashedRefreshToken: null,
+    });
+  }
+
+
   async _updateRefreshToken(user: User, hashedRefreshToken?: string) {
     try {
       await this.userRepository.createQueryBuilder()
@@ -210,6 +221,9 @@ export class AuthService {
     });
   }
 
+  async setRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+    await this.userRepository.update(userId, { hashedRefreshToken: refreshToken });
+  }
   
   orderSelectQuery(query: SelectQueryBuilder<User>) {
     return query
